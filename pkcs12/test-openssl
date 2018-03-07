@@ -1,0 +1,82 @@
+#! /bin/sh
+set -e
+
+go test -v ./...
+go build -o gopkcs12 ./cmd/gopkcs12
+
+cat > rsa.pem <<EOF
+-----BEGIN RSA PRIVATE KEY-----
+MIICXQIBAAKBgQCaHWPer1jjdic2zwHCEIjS6t+MF5A9CgQeN3/UCvpHfSrK4JGT
+Le8fccj8Qiygg2Ww+orRIMB+7yap6VOGcMQelibrPmDMYK9P5GKM1PrbyWXAfXuC
+zt+RmdexKBx7vSsGzzrBzHsgaYtyquMbz+tWjlH32cZ5gdesF9FKy69IpwIDAQAB
+AoGAY7HdeCFgVAyLw4XX8k015ZMwt3RKx2GiVlW6qFXNn89VjlYFdftB88pspNq9
++bvmXb1FbZFNVQ+pqEKa2J48Dzg9Rv8mNlb8RKQpUWautdNuxa66Uzy13kyrDiLx
+TIL5dYQl3h/gdgjpaZNN+nOHjBxkUq4dY4KROPbcm5WoYPECQQDIrnW59uKA4opq
+wr107gIGsvxP6t4Jp8c1jKEb2RbtjclcSMawx1GCrqps4v/rrMDWMLkpt3QPSBL2
+WX2uU1K/AkEAxJjZDWzCwYaFt/QPpf+4UA4ExjeI0wDJS6qRZcMzajLblIjpBkxv
+wf0s711KKsw2eBoBHGybf0YCq5NuM2TMGQJBAKLzPjataIgc6yX7UNlEdbK43TWL
+UZXnfVNXCG7TXNGxwqJDmcprXh1N9KaLwCC+2qpRT9i21O+fp34PdoT5tYMCQQDD
+olZbxZ8IdZUbOQNZbN88yrZ1iU3eqymk4ldNrLG9PF7FsHgyjF2p7QaKK4tii1So
+rzfr0Sfrvv9pPYysF+IBAkBxMt4rEruBtKT6MMpWStHjF8kC90BGgR3mRqp1SgSm
+b/ILyU2v3Bpqz53QSxGczo+JQe8D7hTVMe266MwQpKCl
+-----END RSA PRIVATE KEY-----
+EOF
+openssl rsa -in rsa.pem -noout -text > rsa.txt
+
+cat > cert.pem <<EOF
+-----BEGIN CERTIFICATE-----
+MIIB9DCCAV2gAwIBAgIJAJNveFM0VvMTMA0GCSqGSIb3DQEBCwUAMBMxETAPBgNV
+BAMMCHdoYXRldmVyMB4XDTE4MDIyNzE2MjMxOFoXDTE4MDMyOTE2MjMxOFowEzER
+MA8GA1UEAwwId2hhdGV2ZXIwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBAJod
+Y96vWON2JzbPAcIQiNLq34wXkD0KBB43f9QK+kd9KsrgkZMt7x9xyPxCLKCDZbD6
+itEgwH7vJqnpU4ZwxB6WJus+YMxgr0/kYozU+tvJZcB9e4LO35GZ17EoHHu9KwbP
+OsHMeyBpi3Kq4xvP61aOUffZxnmB16wX0UrLr0inAgMBAAGjUDBOMB0GA1UdDgQW
+BBQc2PwKVdU2BFdQ8xLN81A3lpCBDjAfBgNVHSMEGDAWgBQc2PwKVdU2BFdQ8xLN
+81A3lpCBDjAMBgNVHRMEBTADAQH/MA0GCSqGSIb3DQEBCwUAA4GBAGj3VLbnqE18
+kWjfWaNRKyjCLjVXc0fo9SwDHgJkTfzYI4YhwSIMPMiOq8FZ0IQ2CvENLlYGj1/q
+oWbEZqL2SIOiPP7VSC8OmmluGEjbtsmXCIgJRfSlgvvKeYpFk9xMfP93H0s3arD5
+fTcvDxeznW5r1XE/oEIAa4JDgx5MBSLx
+-----END CERTIFICATE-----
+EOF
+
+cat > expcerts.pem  <<EOF
+Bag Attributes
+    localKeyID: 12 34 
+subject=/CN=whatever
+issuer=/CN=whatever
+EOF
+cat cert.pem >> expcerts.pem
+
+check() {
+    openssl pkcs12 -in openssl.pfx -nodes -nokeys -passin pass:test > certs.pem
+    openssl pkcs12 -in openssl.pfx -nodes -nocerts -passin pass:test > keys.pem
+    diff -u expcerts.pem certs.pem
+    grep -v 'Attributes:' keys.pem > keys.pem2
+    mv keys.pem2 keys.pem
+    openssl rsa -in keys.pem -noout -text > keys.txt
+    diff -u rsa.txt keys.txt
+}
+
+./gopkcs12 -password test -output openssl.pfx \
+            keyid 1234 cert cert.pem \
+            key rsa.pem closesafe \
+            closepfx
+check
+
+./gopkcs12 -password test -output openssl.pfx \
+            keyid 1234 cert cert.pem \
+            key rsa.pem encryptsafe \
+            closepfx
+check
+
+./gopkcs12 -password test -output openssl.pfx \
+            keyid 1234 cert cert.pem closesafe \
+            key rsa.pem encryptsafe \
+            closepfx
+check
+
+./gopkcs12 -password test -output openssl.pfx \
+            key rsa.pem encryptsafe \
+            keyid 1234 cert cert.pem encryptsafe \
+            closepfx
+check

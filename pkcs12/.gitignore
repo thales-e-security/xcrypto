@@ -1,0 +1,6 @@
+*.der
+*.pem
+*.pfx
+/gopkcs12
+keys.txt
+rsa.txt

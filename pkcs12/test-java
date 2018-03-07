@@ -1,0 +1,130 @@
+#! /bin/sh
+set -e
+
+KEYTOOL=${KEYTOOL:-keytool}
+OPENSSL=${OPENSSL:-openssl}
+
+go test -v ./...
+go build -o gopkcs12 ./cmd/gopkcs12
+
+cat > rsa0.pem <<EOF
+-----BEGIN RSA PRIVATE KEY-----
+MIICXQIBAAKBgQCaHWPer1jjdic2zwHCEIjS6t+MF5A9CgQeN3/UCvpHfSrK4JGT
+Le8fccj8Qiygg2Ww+orRIMB+7yap6VOGcMQelibrPmDMYK9P5GKM1PrbyWXAfXuC
+zt+RmdexKBx7vSsGzzrBzHsgaYtyquMbz+tWjlH32cZ5gdesF9FKy69IpwIDAQAB
+AoGAY7HdeCFgVAyLw4XX8k015ZMwt3RKx2GiVlW6qFXNn89VjlYFdftB88pspNq9
++bvmXb1FbZFNVQ+pqEKa2J48Dzg9Rv8mNlb8RKQpUWautdNuxa66Uzy13kyrDiLx
+TIL5dYQl3h/gdgjpaZNN+nOHjBxkUq4dY4KROPbcm5WoYPECQQDIrnW59uKA4opq
+wr107gIGsvxP6t4Jp8c1jKEb2RbtjclcSMawx1GCrqps4v/rrMDWMLkpt3QPSBL2
+WX2uU1K/AkEAxJjZDWzCwYaFt/QPpf+4UA4ExjeI0wDJS6qRZcMzajLblIjpBkxv
+wf0s711KKsw2eBoBHGybf0YCq5NuM2TMGQJBAKLzPjataIgc6yX7UNlEdbK43TWL
+UZXnfVNXCG7TXNGxwqJDmcprXh1N9KaLwCC+2qpRT9i21O+fp34PdoT5tYMCQQDD
+olZbxZ8IdZUbOQNZbN88yrZ1iU3eqymk4ldNrLG9PF7FsHgyjF2p7QaKK4tii1So
+rzfr0Sfrvv9pPYysF+IBAkBxMt4rEruBtKT6MMpWStHjF8kC90BGgR3mRqp1SgSm
+b/ILyU2v3Bpqz53QSxGczo+JQe8D7hTVMe266MwQpKCl
+-----END RSA PRIVATE KEY-----
+EOF
+
+# /CN=whatever
+cat > cert0.pem <<EOF
+-----BEGIN CERTIFICATE-----
+MIIB9DCCAV2gAwIBAgIJAJNveFM0VvMTMA0GCSqGSIb3DQEBCwUAMBMxETAPBgNV
+BAMMCHdoYXRldmVyMB4XDTE4MDIyNzE2MjMxOFoXDTE4MDMyOTE2MjMxOFowEzER
+MA8GA1UEAwwId2hhdGV2ZXIwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBAJod
+Y96vWON2JzbPAcIQiNLq34wXkD0KBB43f9QK+kd9KsrgkZMt7x9xyPxCLKCDZbD6
+itEgwH7vJqnpU4ZwxB6WJus+YMxgr0/kYozU+tvJZcB9e4LO35GZ17EoHHu9KwbP
+OsHMeyBpi3Kq4xvP61aOUffZxnmB16wX0UrLr0inAgMBAAGjUDBOMB0GA1UdDgQW
+BBQc2PwKVdU2BFdQ8xLN81A3lpCBDjAfBgNVHSMEGDAWgBQc2PwKVdU2BFdQ8xLN
+81A3lpCBDjAMBgNVHRMEBTADAQH/MA0GCSqGSIb3DQEBCwUAA4GBAGj3VLbnqE18
+kWjfWaNRKyjCLjVXc0fo9SwDHgJkTfzYI4YhwSIMPMiOq8FZ0IQ2CvENLlYGj1/q
+oWbEZqL2SIOiPP7VSC8OmmluGEjbtsmXCIgJRfSlgvvKeYpFk9xMfP93H0s3arD5
+fTcvDxeznW5r1XE/oEIAa4JDgx5MBSLx
+-----END CERTIFICATE-----
+EOF
+
+id0=1CD8FC0A55D536045750F312CDF350379690810E
+
+# -----------------------------------------------------------------------------
+
+cat > rsa1.pem <<EOF
+-----BEGIN RSA PRIVATE KEY-----
+MIICXAIBAAKBgQDDssL5kw1dMLRsc7DWc8+rXzmM5ziLz+xS9MSQJKPTmUKTiHqS
+SWUZa7jYJOwoHBlwWfLLtVt1XrqkVK9VCa7IzTUf/9224kfYks1pYnRBsgIJU2Mo
+HaPYkw6WCeFzkk6D9c2/WCQ+u/utPK/Xww6+pGrx7mYSfYNKYK+RoLrPmwIDAQAB
+AoGAJXLGxrVyIDwauook89Szj6qoO6NfebmvEmzOVHr+cpZoXA0Iz4eF9ihb9diS
+7FX8NDiyMnMg7kPTWXDvIEm7DVIGflIgyA/e+w6hsNbDJRcJ1PsTYDvGrpZO1E+1
+Zh41tXforsnbaBTkn4NN7HDQCPYxtjFFrt4lg3HEcOzfBlkCQQDu/Es6wCKhiWyY
+eutqA9zlb+iJu5dcrlsTtph/UT7INt7mmhwe5ROfC27f3u+DH/FE8ZnoShaXCUPW
+XBKeu45lAkEA0aGFx3s68/L3aCZJyRTDOeJfEd5eP69Su3jXvuiEPrczHx7srdzM
+mDLNYLn32ca3Mx+Ev8n2JbVf5yWIP6AF/wJAc4bw0wDIfPBS188r+D7PzPXxIovV
+ms8KZhgx1fIveFfWHwHGsESq3IqJWZ2KiQeq+VoVvY37J54p9fjiY2tlZQJBAKel
+L/J+939+UCNnc1yvEQ2qnnMQzXjKwjQRCSCwnIn3QpfhyE+mo6wX/K0dLDxqMbpd
+u3ERl5tCeKbHGjYfyIsCQEAXNl2/nhZ9x4LOFffj+AXg3qL/MS+CMqZMxdu455G2
+gfHtqkCo3gH4K6GR/GU6zjiTJwzQsCIn5WnzHHMnIOc=
+-----END RSA PRIVATE KEY-----
+EOF
+
+# /CN=rsa1
+cat > cert1.pem <<EOF
+-----BEGIN CERTIFICATE-----
+MIIB7DCCAVWgAwIBAgIJAOamSTk1C8iyMA0GCSqGSIb3DQEBCwUAMA8xDTALBgNV
+BAMMBHJzYTEwHhcNMTgwMzA2MTEwNTQ5WhcNMTgwNDA1MTEwNTQ5WjAPMQ0wCwYD
+VQQDDARyc2ExMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDDssL5kw1dMLRs
+c7DWc8+rXzmM5ziLz+xS9MSQJKPTmUKTiHqSSWUZa7jYJOwoHBlwWfLLtVt1Xrqk
+VK9VCa7IzTUf/9224kfYks1pYnRBsgIJU2MoHaPYkw6WCeFzkk6D9c2/WCQ+u/ut
+PK/Xww6+pGrx7mYSfYNKYK+RoLrPmwIDAQABo1AwTjAdBgNVHQ4EFgQUOPmgLJmQ
+o1j3dlA4u33IHUeuxggwHwYDVR0jBBgwFoAUOPmgLJmQo1j3dlA4u33IHUeuxggw
+DAYDVR0TBAUwAwEB/zANBgkqhkiG9w0BAQsFAAOBgQC37l8m68JEYbhOX6b9EHhO
+f3AoKGSDYZ9X7CK4Bkh/ZIiVHjX5yZHSBujA8Zhu8hXpqY1CynZfh1WD8J+X2rzl
+piRnq/FlEyH8hP24/JuF2mNxPd2owOFsKKlN2deIbU6z8kflt35zM7IdwsYioa9e
+isivOOK1OLBax6p+KEJKiw==
+-----END CERTIFICATE-----
+EOF
+
+id1=38F9A02C9990A358F7765038BB7DC81D47AEC608
+
+# -----------------------------------------------------------------------------
+
+check() {
+    ${OPENSSL} pkcs12 -in testjava.pfx  -nodes -passin pass:testjava >/dev/null
+
+    ${KEYTOOL} -list -keystore testjava.pfx -storetype pkcs12 -storepass testjava
+
+    # Check we can get certificates back out via the friendlyName alias
+    # We use OpenSSL to check that the thing we get out is really a certificate
+    ${KEYTOOL} -exportcert -keystore testjava.pfx -storetype pkcs12 -storepass testjava \
+               -alias rsa0 -file export-rsa0.der
+    ${OPENSSL}  x509 -noout -in export-rsa0.der -text -inform der > /dev/null
+    ${KEYTOOL} -exportcert -keystore testjava.pfx -storetype pkcs12 -storepass testjava \
+               -alias rsa1 -file export-rsa1.der
+    ${OPENSSL} x509 -noout -in export-rsa1.der -text -inform der > /dev/null
+
+    # Check that we can use the key (by making a CSR that OpenSSL can parse)
+    ${KEYTOOL} -certreq -keystore testjava.pfx -storetype pkcs12 -storepass testjava \
+               -alias rsa0 -file csr-rsa0.pem
+    ${OPENSSL} asn1parse -i -inform pem -in csr-rsa0.pem > /dev/null
+}
+
+echo
+echo --- One safe with two keys ---
+echo
+./gopkcs12 -password testjava -output testjava.pfx \
+            name rsa0 keyid $id0 cert cert0.pem \
+            name rsa0 keyid $id0 key rsa0.pem \
+            name rsa1 keyid $id1 cert cert1.pem \
+            name rsa1 keyid $id1 key rsa1.pem closesafe \
+            closepfx
+
+check
+
+echo
+echo --- Two safes each with a key ---
+echo
+./gopkcs12 -password testjava -output testjava.pfx \
+            name rsa0 keyid $id0 cert cert0.pem \
+            name rsa0 keyid $id0 key rsa0.pem closesafe \
+            name rsa1 keyid $id1 cert cert1.pem \
+            name rsa1 keyid $id1 key rsa1.pem closesafe \
+            closepfx
+
+check
