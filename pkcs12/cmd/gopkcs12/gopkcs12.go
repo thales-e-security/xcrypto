@@ -91,12 +91,12 @@ func process(args []string) (err error) {
 			if err = enc.CloseSafe("", false); err != nil {
 				return
 			}
-			i += 1
+			i++
 		case "encryptsafe":
 			if err = enc.CloseSafe(password, true); err != nil {
 				return
 			}
-			i += 1
+			i++
 		case "closepfx":
 			var pfx []byte
 			if pfx, err = enc.ClosePfx(password, true); err != nil {
@@ -105,7 +105,7 @@ func process(args []string) (err error) {
 			if err = ioutil.WriteFile(outputPath, pfx, 0666); err != nil {
 				return
 			}
-			i += 1
+			i++
 		default:
 			err = errors.New("unrecognized argument: " + args[i])
 			return

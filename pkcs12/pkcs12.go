@@ -25,10 +25,10 @@ var (
 	oidDataContentType          = asn1.ObjectIdentifier([]int{1, 2, 840, 113549, 1, 7, 1})
 	oidEncryptedDataContentType = asn1.ObjectIdentifier([]int{1, 2, 840, 113549, 1, 7, 6})
 
-	// PKCS#9 friendlyName attribute identifier
-	OidFriendlyName     = asn1.ObjectIdentifier([]int{1, 2, 840, 113549, 1, 9, 20})
-	// PKCS#9 localKeyID attribute identifier
-	OidLocalKeyID = asn1.ObjectIdentifier([]int{1, 2, 840, 113549, 1, 9, 21})
+	// OidFriendlyName is the PKCS#9 friendlyName attribute identifier
+	OidFriendlyName = asn1.ObjectIdentifier([]int{1, 2, 840, 113549, 1, 9, 20})
+	// OidLocalKeyID is the PKCS#9 localKeyID attribute identifier
+	OidLocalKeyID       = asn1.ObjectIdentifier([]int{1, 2, 840, 113549, 1, 9, 21})
 	oidMicrosoftCSPName = asn1.ObjectIdentifier([]int{1, 3, 6, 1, 4, 1, 311, 17, 1})
 )
 
@@ -103,7 +103,7 @@ func unmarshal(in []byte, out interface{}) error {
 	return nil
 }
 
-// ConvertToPEM converts all "safe bags" contained in pfxData to PEM blocks.
+// ToPEM converts all "safe bags" contained in pfxData to PEM blocks.
 func ToPEM(pfxData []byte, password string) ([]*pem.Block, error) {
 	encodedPassword, err := bmpString(password)
 	if err != nil {
@@ -348,7 +348,7 @@ func getSafeContents(p12Data, password []byte) (bags []safeBag, updatedPassword 
 	return bags, password, nil
 }
 
-// A PKCS#12 encoder.
+// Encoder is a PKCS#12 encoder.
 //
 // The caller should:
 //
@@ -381,18 +381,18 @@ type Encoder struct {
 	Attributes []pkcs12Attribute
 }
 
-// Encryption/MAC algorithm
+// Algorithm defines an encryption/MAC algorithm.
 type Algorithm int
 
 const (
-	// DES3 encryption
+	// AlgEncPBKDF2DES3 represents DES3 encryption.
 	AlgEncPBKDF2DES3 = Algorithm(1)
 
-	// HMAC-SHA1
+	// AlgMacPBKDF2HMACSHA1 represents HMAC-SHA1.
 	AlgMacPBKDF2HMACSHA1 = Algorithm(3)
 )
 
-// Create a new encoder with default parameters.
+// NewEncoder creates a new encoder with default parameters.
 func NewEncoder() (enc *Encoder) {
 	enc = &Encoder{}
 	enc.EncAlgorithm = AlgEncPBKDF2DES3
@@ -402,7 +402,7 @@ func NewEncoder() (enc *Encoder) {
 	return
 }
 
-// Add an octet string attribute to the next entry in this safe.
+// AddBinaryAttribute adds an octet string attribute to the next entry in this safe.
 //
 // The attribute will apply to the next certificate or key added with
 // AddCertificate() or AddKey().
@@ -413,7 +413,7 @@ func (enc *Encoder) AddBinaryAttribute(oid asn1.ObjectIdentifier, value []byte) 
 	return
 }
 
-// Add a BMPString attribute to the next entry in this safe.
+// AddStringAttribute adds a BMPString attribute to the next entry in this safe.
 //
 // The attribute will apply to the next certificate or key added with
 // AddCertificate() or AddKey().
@@ -421,7 +421,7 @@ func (enc *Encoder) AddStringAttribute(oid asn1.ObjectIdentifier, value string) 
 	// Encode the string as a BMPString...
 	var stringValue asn1.RawValue
 	stringValue.Class = asn1.ClassUniversal
-	stringValue.Tag = 30 // would like to say asn1.TagBMPString
+	stringValue.Tag = 30           // would like to say asn1.TagBMPString
 	stringValue.IsCompound = false // primitive form
 	if stringValue.Bytes, err = normalBmpString(value); err != nil {
 		return
@@ -432,7 +432,7 @@ func (enc *Encoder) AddStringAttribute(oid asn1.ObjectIdentifier, value string) 
 	return
 }
 
-// Add an arbitrary attribute to the next entry in this safe.
+// addAttribute adds an arbitrary attribute to the next entry in this safe.
 func (enc *Encoder) addAttribute(oid asn1.ObjectIdentifier, value interface{}) (err error) {
 	var rawValue asn1.RawValue
 	rawValue.Class = asn1.ClassUniversal
@@ -446,7 +446,7 @@ func (enc *Encoder) addAttribute(oid asn1.ObjectIdentifier, value interface{}) (
 	return
 }
 
-// Add a certificate to the current SafeContents.
+// AddCertificate adds a certificate to the current SafeContents.
 func (enc *Encoder) AddCertificate(x509Certificates []byte) (err error) {
 	var asn1data []byte
 	if asn1data, err = encodeCertBag(x509Certificates); err != nil {
@@ -464,7 +464,7 @@ func (enc *Encoder) AddCertificate(x509Certificates []byte) (err error) {
 	return
 }
 
-// Generate random salt for a key derivation.
+// getSalt generates random salt for a key derivation.
 func (enc *Encoder) getSalt() (salt []byte, err error) {
 	salt = make([]byte, enc.SaltLength)
 	if _, err = rand.Read(salt); err != nil {
@@ -474,7 +474,7 @@ func (enc *Encoder) getSalt() (salt []byte, err error) {
 	return
 }
 
-// Return a fully parameterized instance of the configured encryption
+// getEncAlgorithm return a fully parameterized instance of the configured encryption
 // algorithm, ready for passing to pbEncrypt().
 func (enc *Encoder) getEncAlgorithm() (algorithm pkix.AlgorithmIdentifier, err error) {
 	switch enc.EncAlgorithm {
@@ -500,7 +500,7 @@ func (enc *Encoder) getEncAlgorithm() (algorithm pkix.AlgorithmIdentifier, err e
 	return
 }
 
-// Add a key to the current SafeContents.
+// AddKey adds a key to the current SafeContents.
 //
 // The key will be encrypted using the password. (Unencrypted private
 // keys are not currently supported.)
@@ -537,7 +537,7 @@ func (enc *Encoder) AddKey(password string, encrypt bool, privateKey interface{}
 	return
 }
 
-// Finalize a SafeContents.
+// CloseSafe finalizes a SafeContents.
 //
 // If encrypt==true then the SafeContents will be encrypted using the password.
 func (enc *Encoder) CloseSafe(password string, encrypt bool) (err error) {
@@ -592,7 +592,7 @@ func (enc *Encoder) CloseSafe(password string, encrypt bool) (err error) {
 	return
 }
 
-// Finalize a PFX and return the resulting byte string.
+// ClosePfx finalizes a PFX and return the resulting byte string.
 //
 // The PFX will be MACed using the password. Unverified PFXs are not
 // supported.
