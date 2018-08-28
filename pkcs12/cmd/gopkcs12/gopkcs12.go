@@ -7,7 +7,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"git.tesfabric.com/ignite/xcrypto/pkcs12"
+	"github.com/thales-e-security/xcrypto/pkcs12"
 	"io/ioutil"
 	"os"
 )

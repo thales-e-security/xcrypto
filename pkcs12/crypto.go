@@ -12,8 +12,7 @@ import (
 	"encoding/asn1"
 	"errors"
 
-	"git.tesfabric.com/ignite/xcrypto/pkcs12/internal/rc2"
-	//"golang.org/x/crypto/pkcs12/internal/rc2"
+	"github.com/thales-e-security/xcrypto/pkcs12/internal/rc2"
 )
 
 var (
