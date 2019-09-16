@@ -94,6 +94,13 @@ func (kdf *KDF) Read(p []byte) (int, error) {
 		n = fromBuffer
 		toRead -= fromBuffer
 	}
+
+	// If we completely satisfied the read from cache or there's no more data return.
+	if toRead == 0 {
+		kdf.position += n
+		return n, nil
+	}
+
 	// Calculate the number of full hash outputs required to satisfy request.
 	iterations := ceil(toRead, kdf.digester.Size())
 	for i := 0; i < iterations; i++ {
