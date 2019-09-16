@@ -123,17 +123,24 @@ func TestKDF_Read_ReturnsEOF(t *testing.T) {
 		require(t, error(nil), err)
 
 		// Act, Assert
-		buffer := make([]byte, 31)
-		read, err := kdf.Read(buffer)
 
-		require(t, 31, read)
+		// Read a partial block
+		buffer := make([]byte, 30)
+		read, err := kdf.Read(buffer)
+		require(t, 30, read)
 		require(t, error(nil), err)
 
-		read, err = kdf.Read(buffer)
+		// Read 1 byte of a cached block
+		read, err = kdf.Read(buffer[0:1])
+		require(t, 1, read)
+		require(t, error(nil), err)
 
+		// Read 1 byte of a cached block and 1 byte of a new block
+		read, err = kdf.Read(buffer[0:2])
 		require(t, 2, read)
 		require(t, error(nil), err)
 
+		//
 		read, err = kdf.Read(buffer)
 		require(t, 0, 0)
 		require(t, io.EOF, err)

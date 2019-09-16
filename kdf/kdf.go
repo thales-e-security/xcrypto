@@ -92,7 +92,7 @@ func (kdf *KDF) Read(p []byte) (int, error) {
 		copy(p, kdf.buffer[:fromBuffer])
 		kdf.buffer = kdf.buffer[fromBuffer:]
 		n = fromBuffer
-		toRead -= n
+		toRead -= fromBuffer
 	}
 	// Calculate the number of full hash outputs required to satisfy request.
 	iterations := ceil(toRead, kdf.digester.Size())
@@ -120,7 +120,7 @@ func (kdf *KDF) Read(p []byte) (int, error) {
 		toRead -= tLen
 		kdf.digester.Reset()
 	}
-	kdf.position = kdf.position + n
+	kdf.position += n
 	return n, nil
 }
 
