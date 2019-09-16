@@ -29,6 +29,6 @@ To build and test:
 
 ## KDF
 
-KDF includes from-scratch implementations of the KDF1 and KDF2 key derivation algorithms used in various cryptographic schemes.
+KDF includes from-scratch implementations of the [KDF1 and KDF2 key derivation algorithms](https://www.shoup.net/iso/std6.pdf) used in various cryptographic schemes.
 The 2 flavors of KDF implement the standard `io.Reader` interface. The code includes known answer tests and example
 usage.

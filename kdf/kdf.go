@@ -21,11 +21,12 @@
 package kdf
 
 import (
-	"encoding/binary"
 	"crypto"
+	"encoding/binary"
 	"errors"
 	"hash"
 	"io"
+
 	// Force registration of SHA1 and SHA2 families of cryptographic primitives to
 	// reduce the burden on KDF consuming packages.
 	_ "crypto/sha1"
@@ -34,15 +35,15 @@ import (
 )
 
 var (
-	// ErrInvalidLengthParameter the KDF length parameter is invalid
-	ErrInvalidLengthParameter = errors.New("invalid length parameter")
+	// errInvalidLengthParameter the KDF length parameter is invalid
+	errInvalidLengthParameter = errors.New("invalid length parameter")
 
-	// ErrInvalidSeedParameter a parameter is invalid.
-	ErrInvalidSeedParameter = errors.New("invalid input parameter")
-	)
+	// errInvalidSeedParameter a parameter is invalid.
+	errInvalidSeedParameter = errors.New("invalid input parameter")
+)
 
 // Verify KDF completely implements the io.Reader interface.
-var _ io.Reader = &KDF{}
+var _ io.Reader = (*KDF)(nil)
 
 // KDF key derivation context struct
 type KDF struct {
@@ -56,10 +57,10 @@ type KDF struct {
 }
 
 // i2osp 4-byte integer marshalling.
-func i2osp(i uint32) (osp []byte) {
-	osp = make([]byte, 4)
+func i2osp(i uint32) []byte {
+	osp := make([]byte, 4)
 	binary.BigEndian.PutUint32(osp, i)
-	return
+	return osp
 }
 
 // min select the minimum value of a and b.
@@ -71,14 +72,14 @@ func min(a, b int) int {
 }
 
 // Read read the next len(p) bytes from the KDF context.
-func (kdf *KDF) Read(p []byte) (n int, err error) {
+func (kdf *KDF) Read(p []byte) (int, error) {
+	var n int
+	// When there's no data left return EOF.
+	if kdf.length-kdf.position == 0 {
+		return 0, io.EOF
+	}
 	// Read the minimum of everything requested or whatever's left.
 	toRead := min(len(p), kdf.length-kdf.position)
-	// When there's no data left fail.
-	if toRead == 0 {
-		err = io.EOF
-		return
-	}
 	// Use buffered data first to attempt to satisfy request.
 	if len(kdf.buffer) > 0 {
 		fromBuffer := min(len(kdf.buffer), toRead)
@@ -91,14 +92,14 @@ func (kdf *KDF) Read(p []byte) (n int, err error) {
 	for i := 0; i < iterations; i++ {
 		osp := i2osp(kdf.iterations)
 		kdf.iterations++
-		if _, err = kdf.digester.Write(kdf.seed); err != nil {
-			return
+		if _, err := kdf.digester.Write(kdf.seed); err != nil {
+			return 0, err
 		}
-		if _, err = kdf.digester.Write(osp); err != nil {
-			return
+		if _, err := kdf.digester.Write(osp); err != nil {
+			return 0, err
 		}
-		if _, err = kdf.digester.Write(kdf.other); err != nil {
-			return
+		if _, err := kdf.digester.Write(kdf.other); err != nil {
+			return 0, err
 		}
 		t := kdf.digester.Sum(nil)
 		tLen := len(t)
@@ -112,21 +113,19 @@ func (kdf *KDF) Read(p []byte) (n int, err error) {
 		kdf.digester.Reset()
 	}
 	kdf.position = kdf.position + n
-	return
+	return n, nil
 }
 
-func newKDF(seed, other []byte, hash crypto.Hash, offset uint32, length int) (kdf *KDF, err error) {
+func newKDF(seed, other []byte, hash crypto.Hash, offset uint32, length int) (*KDF, error) {
 	if len(seed) == 0 {
-		err = ErrInvalidSeedParameter
-		return
+		return nil, errInvalidSeedParameter
 	}
 	// Calculate maximum size of the output based on the hash size.
 	var maxlen = int64(1<<32) * int64(hash.Size())
 	if length <= 0 || int64(length) > maxlen {
-		err = ErrInvalidLengthParameter
-		return
+		return nil, errInvalidLengthParameter
 	}
-	kdf = &KDF{
+	kdf := &KDF{
 		seed:       seed,
 		other:      other,
 		length:     length,
@@ -135,7 +134,7 @@ func newKDF(seed, other []byte, hash crypto.Hash, offset uint32, length int) (kd
 		buffer:     nil,
 		digester:   hash.New(),
 	}
-	return
+	return kdf, nil
 }
 
 // NewKDF1 create a new KDF1 context.

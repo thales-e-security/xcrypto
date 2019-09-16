@@ -70,7 +70,7 @@ func TestNewKDF(t *testing.T) {
 			seed:          nil,
 			hash:          crypto.SHA256,
 			length:        10,
-			expectedError: ErrInvalidSeedParameter,
+			expectedError: errInvalidSeedParameter,
 		},
 		// invalid length parameter
 		{
@@ -78,14 +78,14 @@ func TestNewKDF(t *testing.T) {
 			seed:          make([]byte, 10),
 			hash:          crypto.SHA256,
 			length:        math.MaxInt64,
-			expectedError: ErrInvalidLengthParameter,
+			expectedError: errInvalidLengthParameter,
 		},
 		{
 			name:          "InvalidLengthParameterTooSmall",
 			seed:          make([]byte, 10),
 			hash:          crypto.SHA256,
 			length:        0,
-			expectedError: ErrInvalidLengthParameter,
+			expectedError: errInvalidLengthParameter,
 		},
 		// positive test case
 		{
