@@ -135,7 +135,10 @@ func newKDF(seed, other []byte, hash crypto.Hash, offset uint32, length int) (*K
 	if len(seed) == 0 {
 		return nil, errInvalidSeedParameter
 	}
-	// Calculate maximum size of the output based on the hash size.
+	// The specification defines the maximum output to be (2^32 - 1) * hash.Size() bytes.
+	// See section 6.2.3.2 of https://www.shoup.net/iso/std6.pdf.
+	// The maximum length is bounded by a 32-bit unsigned counter used in each iteration of the the KDF's inner digest
+	// loop. In this loop the counter is incremented by 1 and hash.Size() bytes are returned to the caller.
 	var maxlen = int64(1<<32) * int64(hash.Size())
 	if length <= 0 || int64(length) > maxlen {
 		return nil, errInvalidLengthParameter
