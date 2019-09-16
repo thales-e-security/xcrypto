@@ -71,6 +71,12 @@ func min(a, b int) int {
 	return b
 }
 
+// Divide x by divisor rounding up. This is equivalent to the math.Ceil(float64(x)/float64(divisor)) using fixed point
+// integer arithmetic.
+func ceil(x, divisor int) int {
+	return (x + (divisor - 1)) / divisor
+}
+
 // Read read the next len(p) bytes from the KDF context.
 func (kdf *KDF) Read(p []byte) (int, error) {
 	var n int
@@ -86,9 +92,10 @@ func (kdf *KDF) Read(p []byte) (int, error) {
 		copy(p, kdf.buffer[:fromBuffer])
 		kdf.buffer = kdf.buffer[fromBuffer:]
 		n = fromBuffer
+		toRead -= n
 	}
 	// Calculate the number of full hash outputs required to satisfy request.
-	iterations := ((toRead - n) + (kdf.digester.Size() - 1)) / kdf.digester.Size()
+	iterations := ceil(toRead, kdf.digester.Size())
 	for i := 0; i < iterations; i++ {
 		osp := i2osp(kdf.iterations)
 		kdf.iterations++
@@ -104,12 +111,13 @@ func (kdf *KDF) Read(p []byte) (int, error) {
 		t := kdf.digester.Sum(nil)
 		tLen := len(t)
 		// The last iteration may have some leftover data which we buffer for the next invocation of read.
-		if tLen > toRead-n {
-			tLen = toRead - n
-			kdf.buffer = t[tLen:]
+		if tLen > toRead {
+			kdf.buffer = t[toRead:]
+			tLen = toRead
 		}
 		copy(p[n:], t[:tLen])
 		n += tLen
+		toRead -= tLen
 		kdf.digester.Reset()
 	}
 	kdf.position = kdf.position + n
