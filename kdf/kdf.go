@@ -73,7 +73,7 @@ func min(a, b int) int {
 
 // Divide x by divisor rounding up. This is equivalent to the math.Ceil(float64(x)/float64(divisor)) using fixed point
 // integer arithmetic.
-func ceil(x, divisor int) int {
+func ceil(x, divisor int64) int64 {
 	return (x + (divisor - 1)) / divisor
 }
 
@@ -102,8 +102,8 @@ func (kdf *KDF) Read(p []byte) (int, error) {
 	}
 
 	// Calculate the number of full hash outputs required to satisfy request.
-	iterations := ceil(toRead, kdf.digester.Size())
-	for i := 0; i < iterations; i++ {
+	iterations := ceil(int64(toRead), int64(kdf.digester.Size()))
+	for i := int64(0); i < iterations; i++ {
 		osp := i2osp(kdf.iterations)
 		kdf.iterations++
 		if _, err := kdf.digester.Write(kdf.seed); err != nil {
@@ -135,12 +135,11 @@ func newKDF(seed, other []byte, hash crypto.Hash, offset uint32, length int) (*K
 	if len(seed) == 0 {
 		return nil, errInvalidSeedParameter
 	}
-	// The specification defines the maximum output to be (2^32 - 1) * hash.Size() bytes.
-	// See section 6.2.3.2 of https://www.shoup.net/iso/std6.pdf.
+	// See sections 6.2.2.2 and 6.2.3.2 of https://www.shoup.net/iso/std6.pdf.
 	// The maximum length is bounded by a 32-bit unsigned counter used in each iteration of the the KDF's inner digest
 	// loop. In this loop the counter is incremented by 1 and hash.Size() bytes are returned to the caller.
-	var maxlen = int64(1<<32) * int64(hash.Size())
-	if length <= 0 || int64(length) > maxlen {
+	k := ceil(int64(length), int64(hash.Size()))
+	if k <= 0 || k > ((1<<32)-int64(offset)) {
 		return nil, errInvalidLengthParameter
 	}
 	kdf := &KDF{
