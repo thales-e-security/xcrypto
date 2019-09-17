@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.com/thales-e-security/xcrypto.svg?branch=master)](https://https://travis-ci.com/thales-e-security/xcrypto)
+[![Build Status](https://travis-ci.com/thales-e-security/xcrypto.svg?branch=master)](https://travis-ci.com/thales-e-security/xcrypto)
 # xcrypto
 
 Miscellaneous crypto-related utility packages written in Go.
