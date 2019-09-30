@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.com/thales-e-security/xcrypto.svg?branch=master)](https://travis-ci.com/thales-e-security/xcrypto)
 # xcrypto
 
 Miscellaneous crypto-related utility packages written in Go.
@@ -26,3 +27,9 @@ To build and test:
     go test -v ./...
     ./test-openssl
     ./test-java
+
+## KDF
+
+KDF includes from-scratch implementations of the [KDF1 and KDF2 key derivation algorithms](https://www.shoup.net/iso/std6.pdf) used in various cryptographic schemes.
+The 2 flavors of KDF implement the standard `io.Reader` interface. The code includes known answer tests and example
+usage.

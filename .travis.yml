@@ -1,0 +1,9 @@
+dist: xenial
+language: go
+go:
+  - "1.12.x"
+  - "master"
+script:
+  - go vet ./...
+  - go build ./...
+  - go test ./...
